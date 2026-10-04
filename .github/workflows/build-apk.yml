@@ -1,12 +1,15 @@
 name: Build Timer Auto Clicker APK
 
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
     - name: Checkout repository
@@ -21,55 +24,43 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: '8.4'
+        gradle-version: '8.6'
 
-    - name: Unzip Project if Needed
+    - name: Unpack Project Zip if Present
       run: |
+        # If user uploaded the project as a ZIP archive, unpack it
         TARGET_ZIP=$(find . -maxdepth 2 -type f \( -name "*1.2.6*.zip*" -o -name "*.zip" -o -name "*.zip.html" \) | sort -V | tail -n 1)
         if [ -n "$TARGET_ZIP" ]; then
-          echo "Processing newest archive: $TARGET_ZIP"
+          echo "Found project archive: $TARGET_ZIP"
           if [[ "$TARGET_ZIP" == *.html ]]; then
             CLEAN_ZIP="${TARGET_ZIP%.html}"
             mv "$TARGET_ZIP" "$CLEAN_ZIP"
             TARGET_ZIP="$CLEAN_ZIP"
           fi
           if [ ! -d "app/src" ]; then
-            echo "Unpacking full archive because app/src was not found..."
+            echo "Unpacking archive to root..."
             unzip -o "$TARGET_ZIP" || true
           else
-            echo "Direct source tree app/src already present. Updating only newer files..."
+            echo "Direct source tree already present."
             unzip -u -o "$TARGET_ZIP" || true
           fi
-          echo "Archive processing completed."
         fi
 
-    - name: Cache Fixed Keystore for Seamless Overwrite Updates
-      uses: actions/cache@v4
-      with:
-        path: ~/.android/debug.keystore
-        key: fixed-android-debug-keystore-v3
-
-    - name: Prepare Fixed Keystore with Native JDK Keytool
+    - name: Ensure Keystore Exists
       run: |
-        mkdir -p ~/.android
-        # If keystore doesn't exist in cache, generate native Java Keystore with JDK keytool
-        if [ ! -f ~/.android/debug.keystore ]; then
-          echo "Generating native Java keystore directly with JDK keytool..."
+        mkdir -p app
+        if [ ! -f "app/debug.keystore" ]; then
+          echo "Generating debug keystore..."
           keytool -genkeypair \
             -alias androiddebugkey \
             -keypass android \
-            -keystore ~/.android/debug.keystore \
+            -keystore app/debug.keystore \
             -storepass android \
             -dname "CN=Android Debug,O=Android,C=US" \
             -keyalg RSA \
             -keysize 2048 \
-            -validity 10000
+            -validity 10000 || true
         fi
-
-        # Remove any stale/corrupted keystore from repo
-        find . -name "debug.keystore" -exec rm -f {} \;
-        # Copy the genuine JDK keystore into every app folder
-        find . -type d -name "app" -exec cp ~/.android/debug.keystore {}/debug.keystore \;
 
     - name: Build APK with Gradle
       run: |
@@ -85,6 +76,10 @@ jobs:
         echo "android.useAndroidX=true" > gradle.properties
         echo "android.nonTransitiveRClass=true" >> gradle.properties
         echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
+
+        if [ ! -f gradlew ]; then
+          gradle wrapper --gradle-version 8.6 || true
+        fi
 
         if [ -f gradlew ]; then
           chmod +x gradlew
@@ -104,15 +99,18 @@ jobs:
 
     - name: Upload Debug APK Artifact
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: TimerAutoClickerPro-v1.2.6-APK
         path: "**/app/build/outputs/apk/debug/*.apk"
+        if-no-files-found: warn
 
     - name: Create or Update GitHub Release with Direct APK Download
       uses: softprops/action-gh-release@v2
-      if: always()
+      if: success()
+      continue-on-error: true
       with:
-        tag_name: latest-build
+        tag_name: v1.2.6-build-${{ github.run_number }}
         name: "Timer Auto Clicker Pro v1.2.6 最新APK (解凍不要)"
         body: |
           ### 📱 Timer Auto Clicker Pro (v1.2.6 最新版)
@@ -122,4 +120,6 @@ jobs:
           - 直下にある `TimerAutoClickerPro-v1.2.6.apk` をタップすると**解凍不要で直接インストール**できます！
         files: |
           **/app/build/outputs/apk/debug/*.apk
-      continue-on-error: true
+        fail_on_unmatched_files: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
