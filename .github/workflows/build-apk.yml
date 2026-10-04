@@ -33,16 +33,42 @@ jobs:
             mv "$TARGET_ZIP" "$CLEAN_ZIP"
             TARGET_ZIP="$CLEAN_ZIP"
           fi
-          rm -rf app gradle settings.gradle.kts build.gradle.kts
-          unzip -o "$TARGET_ZIP"
-          echo "Successfully unpacked $TARGET_ZIP"
+          if [ ! -d "app/src" ]; then
+            echo "Unpacking full archive because app/src was not found..."
+            unzip -o "$TARGET_ZIP" || true
+          else
+            echo "Direct source tree app/src already present. Updating only newer files..."
+            unzip -u -o "$TARGET_ZIP" || true
+          fi
+          echo "Archive processing completed."
         fi
 
-    - name: Prepare Fixed Keystore for Seamless Overwrite Updates
+    - name: Cache Fixed Keystore for Seamless Overwrite Updates
+      uses: actions/cache@v4
+      with:
+        path: ~/.android/debug.keystore
+        key: fixed-android-debug-keystore-v3
+
+    - name: Prepare Fixed Keystore with Native JDK Keytool
       run: |
         mkdir -p ~/.android
-        KEYSTORE_B64="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"
-        echo "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore || echo "$KEYSTORE_B64" | base64 -di > ~/.android/debug.keystore
+        # If keystore doesn't exist in cache, generate native Java Keystore with JDK keytool
+        if [ ! -f ~/.android/debug.keystore ]; then
+          echo "Generating native Java keystore directly with JDK keytool..."
+          keytool -genkeypair \
+            -alias androiddebugkey \
+            -keypass android \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000
+        fi
+
+        # Remove any stale/corrupted keystore from repo
+        find . -name "debug.keystore" -exec rm -f {} \;
+        # Copy the genuine JDK keystore into every app folder
         find . -type d -name "app" -exec cp ~/.android/debug.keystore {}/debug.keystore \;
 
     - name: Build APK with Gradle
