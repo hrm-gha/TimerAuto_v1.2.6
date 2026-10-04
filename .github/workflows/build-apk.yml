@@ -46,20 +46,13 @@ jobs:
           fi
         fi
 
-    - name: Ensure Keystore Exists
+    - name: Ensure Fixed Signing Keystore Exists (Enables Overwrite Updates)
       run: |
         mkdir -p app
+        # If debug.keystore is missing, decode the permanent keystore to guarantee identical signature across all builds
         if [ ! -f "app/debug.keystore" ]; then
-          echo "Generating debug keystore..."
-          keytool -genkeypair \
-            -alias androiddebugkey \
-            -keypass android \
-            -keystore app/debug.keystore \
-            -storepass android \
-            -dname "CN=Android Debug,O=Android,C=US" \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 || true
+          echo "Restoring permanent fixed keystore for seamless overwrite updates..."
+          echo "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" | base64 -d > app/debug.keystore
         fi
 
     - name: Build APK with Gradle
@@ -88,13 +81,14 @@ jobs:
           gradle assembleDebug --no-daemon --stacktrace
         fi
 
-    - name: Prepare Named APKs
+    - name: Prepare Clean Single Named APK
       run: |
         APK_PATH=$(find . -name "app-debug.apk" | head -n 1)
         if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
           DIR=$(dirname "$APK_PATH")
-          cp "$APK_PATH" "$DIR/TimerAutoClickerPro-v1.2.6.apk"
-          echo "Created $DIR/TimerAutoClickerPro-v1.2.6.apk"
+          # Move instead of copy to eliminate redundant app-debug.apk
+          mv "$APK_PATH" "$DIR/TimerAutoClickerPro-v1.2.6.apk"
+          echo "Renamed $APK_PATH to $DIR/TimerAutoClickerPro-v1.2.6.apk"
         fi
 
     - name: Upload Debug APK Artifact
@@ -102,7 +96,7 @@ jobs:
       if: success()
       with:
         name: TimerAutoClickerPro-v1.2.6-APK
-        path: "**/app/build/outputs/apk/debug/*.apk"
+        path: "**/app/build/outputs/apk/debug/TimerAutoClickerPro-v1.2.6.apk"
         if-no-files-found: warn
 
     - name: Create or Update GitHub Release with Direct APK Download
@@ -115,11 +109,11 @@ jobs:
         body: |
           ### 📱 Timer Auto Clicker Pro (v1.2.6 最新版)
           - 【増殖・終了バグ完全解消】バー（HUD）増殖および終了ボタンで消えない問題を根本解決
-          - 【即時消去】HUD終了ボタンおよびメイン画面の「🛑 終了 / 🛑 バー消去」で全オーバーレイを即時完全削除
-          - クリックアシスタント等の他アプリに潜り込まない「絶対的最前面（Accessibility Overlay）」安全保護
+          - 【上書きアップデート対応】固定署名キーストアにより、毎回アンインストール不要で上書きインストール可能
+          - 【単一APK化】不要な `app-debug.apk` を排除し、`TimerAutoClickerPro-v1.2.6.apk` のみを出力
           - 直下にある `TimerAutoClickerPro-v1.2.6.apk` をタップすると**解凍不要で直接インストール**できます！
         files: |
-          **/app/build/outputs/apk/debug/*.apk
+          **/app/build/outputs/apk/debug/TimerAutoClickerPro-v1.2.6.apk
         fail_on_unmatched_files: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
