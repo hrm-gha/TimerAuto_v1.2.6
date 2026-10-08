@@ -29,7 +29,7 @@ jobs:
     - name: Unpack Project Zip if Present
       run: |
         # If user uploaded the project as a ZIP archive, unpack it
-        TARGET_ZIP=$(find . -maxdepth 2 -type f \( -name "*1.2.7*.zip*" -o -name "*1.2.6*.zip*" -o -name "*.zip" -o -name "*.zip.html" \) | sort -V | tail -n 1)
+        TARGET_ZIP=$(find . -maxdepth 2 -type f \( -name "*.zip" -o -name "*.zip.html" \) | sort -V | tail -n 1)
         if [ -n "$TARGET_ZIP" ]; then
           echo "Found project archive: $TARGET_ZIP"
           if [[ "$TARGET_ZIP" == *.html ]]; then
@@ -87,16 +87,16 @@ jobs:
         if [ -n "$APK_PATH" ] && [ -f "$APK_PATH" ]; then
           DIR=$(dirname "$APK_PATH")
           # Move instead of copy to eliminate redundant app-debug.apk
-          mv "$APK_PATH" "$DIR/TimerAutoClickerPro-v1.2.7.apk"
-          echo "Renamed $APK_PATH to $DIR/TimerAutoClickerPro-v1.2.7.apk"
+          mv "$APK_PATH" "$DIR/TimerAutoClickerPro-v1.3.3.apk"
+          echo "Renamed $APK_PATH to $DIR/TimerAutoClickerPro-v1.3.3.apk"
         fi
 
     - name: Upload Debug APK Artifact
       uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: TimerAutoClickerPro-v1.2.7-APK
-        path: "**/app/build/outputs/apk/debug/TimerAutoClickerPro-v1.2.7.apk"
+        name: TimerAutoClickerPro-v1.3.3-APK
+        path: "**/app/build/outputs/apk/debug/TimerAutoClickerPro-v1.3.3.apk"
         if-no-files-found: warn
 
     - name: Create or Update GitHub Release with Direct APK Download
@@ -104,17 +104,19 @@ jobs:
       if: success()
       continue-on-error: true
       with:
-        tag_name: v1.2.7-build-${{ github.run_number }}
-        name: "Timer Auto Clicker Pro v1.2.7 最新APK (解凍不要)"
+        tag_name: v1.3.3-build-${{ github.run_number }}
+        name: "Timer Auto Clicker Pro v1.3.3 最新APK (解凍不要)"
         body: |
-          ### 📱 Timer Auto Clicker Pro (v1.2.7 最新版)
-          - 【小型化】①時限装置（自動タップ）ボタンを従来の2/3サイズにスリム化し、より緻密な配置が可能に
-          - 【HUDスマート化】「最前」ボタンを表から撤去し、5個のすっきりしたボタン構成に刷新
-          - 【上書きアップデート対応】固定署名キーストアにより、毎回アンインストール不要で上書きインストール可能
-          - 【単一APK化】不要な `app-debug.apk` を排除し、`TimerAutoClickerPro-v1.2.7.apk` のみを出力
-          - 直下にある `TimerAutoClickerPro-v1.2.7.apk` をタップすると**解凍不要で直接インストール**できます！
+          ### 📱 Timer Auto Clicker Pro (v1.3.3 最新版)
+          - 【プリセット個別の位置保存に対応】プリセットごとに①自動タップ位置と🎯手動目印位置を個別に独立保持。プリセット切替時にそれぞれの登録位置へマーカーが即時ジャンプし、他のプリセットを上書きしません。
+          - 【コンパクトバー「⚙設定」の応答性改善】最前面フローティングバーの「⚙設定」ボタンのタッチ感度を改善し、100%確実に設定ダイアログが開くよう修正。設定画面内でも1タップでプリセット切り替えと位置復元が可能。
+          - 【緑の目印（🎯）の常時表示を維持】指定時刻のタイマー発動時やテスト時も目印が消えず常に画面上に表示。本番の予約開始瞬間に目印を見失うことなく、確実に目的の予約枠をタップできます。
+          - 【タップ直通・完全透過】緑の目印は完全透過（FLAG_NOT_TOUCHABLE）のため、目印の上から下のWebページ・アプリのボタンを直接何回でもタップ可能。
+          - 【「✕ 終了」ボタンの反応問題を完全解消】上部HUDの終了ボタンを大型化し、高感度タッチセンサー＆安全破棄処理で確実に終了・完全消去。
+          - 【固定キーストア内蔵】アンインストール不要で上書きインストール可能。
+          - 【単一APK化】不要な `app-debug.apk` を排除し、`TimerAutoClickerPro-v1.3.3.apk` のみを出力。直下にあるAPKをタップすると**解凍不要で直接インストール**できます！
         files: |
-          **/app/build/outputs/apk/debug/TimerAutoClickerPro-v1.2.7.apk
+          **/app/build/outputs/apk/debug/TimerAutoClickerPro-v1.3.3.apk
         fail_on_unmatched_files: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
